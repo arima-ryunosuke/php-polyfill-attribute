@@ -39,7 +39,8 @@
       "@test"
     ],
     "test": [
-      "vendor/bin/phpunit --configuration=tests/phpunit.xml"
+      "vendor/bin/phpunit --configuration=tests/phpunit.xml",
+      "php demo/main.php"
     ]
   }
 }
