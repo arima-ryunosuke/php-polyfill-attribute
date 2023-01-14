@@ -13,7 +13,9 @@ use Reflector;
 
 class Provider
 {
-    private static ?CacheInterface $cache = null;
+    private static ?CacheInterface $defaultCache = null;
+
+    private ?CacheInterface $cache;
 
     /**
      * set cache config
@@ -24,7 +26,12 @@ class Provider
      */
     public static function setCacheConfig(?CacheInterface $cache = null)
     {
-        self::$cache = $cache;
+        self::$defaultCache = $cache;
+    }
+
+    public function __construct(?CacheInterface $cache = null)
+    {
+        $this->cache = $cache ?? self::$defaultCache ?? null;
     }
 
     /**
@@ -44,9 +51,9 @@ class Provider
 
         // gather or cache
         $attributes = (function ($reflector): array {
-            $cacheid = self::$cache === null ? null : urlencode(Reflection::getId($reflector));
+            $cacheid = $this->cache === null ? null : urlencode(Reflection::getId($reflector));
             if ($cacheid !== null) {
-                $cache = self::$cache->get($cacheid);
+                $cache = $this->cache->get($cacheid);
                 if ($cache !== null) {
                     return $cache;
                 }
@@ -56,7 +63,7 @@ class Provider
             $attributes = $reflection->getAttributeArray();
 
             if ($cacheid !== null) {
-                self::$cache->set($cacheid, $attributes);
+                $this->cache->set($cacheid, $attributes);
             }
             return $attributes;
         })($reflector);

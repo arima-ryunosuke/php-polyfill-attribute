@@ -34,8 +34,6 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
             return $this->markTestSkipped();
         }
 
-        $provider = new Provider();
-
         $cache = new class () implements CacheInterface {
             public $items = [];
 
@@ -63,6 +61,8 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
         };
 
         Provider::setCacheConfig($cache);
+
+        $provider = new Provider();
 
         $micrtime = microtime(true);
         $provider->getAttributeOf(Concrete::class);
