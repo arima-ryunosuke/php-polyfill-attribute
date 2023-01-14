@@ -16,7 +16,7 @@
   ],
   "require": {
     "php": ">=7.4",
-    "roave/better-reflection": "4.*",
+    "roave/better-reflection": "4.*|5.*",
     "nikic/php-parser": "4.*",
     "psr/simple-cache": "*"
   },
