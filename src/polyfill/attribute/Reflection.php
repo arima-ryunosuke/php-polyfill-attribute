@@ -14,7 +14,6 @@ use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor\NameResolver;
 use PhpParser\NodeVisitor\ParentConnectingVisitor;
 use PhpParser\Parser;
-use Reflector;
 use Roave\BetterReflection\Reflection\ReflectionClass;
 use Roave\BetterReflection\Reflection\ReflectionClassConstant;
 use Roave\BetterReflection\Reflection\ReflectionFunction;
@@ -23,7 +22,9 @@ use Roave\BetterReflection\Reflection\ReflectionMethod;
 use Roave\BetterReflection\Reflection\ReflectionParameter;
 use Roave\BetterReflection\Reflection\ReflectionProperty;
 use Roave\BetterReflection\Reflector\ClassReflector;
+use Roave\BetterReflection\Reflector\DefaultReflector;
 use Roave\BetterReflection\Reflector\FunctionReflector;
+use Roave\BetterReflection\Reflector\Reflector;
 use Roave\BetterReflection\SourceLocator\Ast\Locator as AstLocator;
 use Roave\BetterReflection\SourceLocator\Ast\Parser\MemoizingParser;
 use Roave\BetterReflection\SourceLocator\Located\LocatedSource;
@@ -53,6 +54,7 @@ class Reflection
          */
         return self::$configuration ??= new class () {
             private SourceLocator     $sourceLocator;
+            private Reflector         $reflector;
             private ClassReflector    $classReflector;
             private FunctionReflector $functionReflector;
             private Parser            $phpParser;
@@ -70,15 +72,23 @@ class Reflection
                 );
             }
 
-            public function classReflector(): ClassReflector
+            public function reflector(string $type): Reflector
             {
-                return $this->classReflector ??= new ClassReflector($this->sourceLocator());
-            }
+                if (class_exists(DefaultReflector::class)) {
+                    return $this->reflector ??= new DefaultReflector($this->sourceLocator()); // @codeCoverageIgnore
+                }
 
-            public function functionReflector(): FunctionReflector
-            {
-                return $this->functionReflector ??= new FunctionReflector($this->sourceLocator(), $this->classReflector());
-            }
+                if ($type === 'class') {
+                    return $this->classReflector ??= new class($this->sourceLocator()) extends ClassReflector {
+                        public function reflectClass(string $className) { return parent::reflect($className); }
+                    };
+                }
+                if ($type === 'function') {
+                    return $this->functionReflector ??= new class($this->sourceLocator(), $this->reflector('class')) extends FunctionReflector {
+                        public function reflectFunction(string $functionName) { return parent::reflect($functionName); }
+                    };
+                }
+            } // @codeCoverageIgnore
 
             public function phpParser(): Parser
             {
@@ -97,7 +107,7 @@ class Reflection
 
             public function astLocator(): AstLocator
             {
-                return $this->astLocator ??= new AstLocator($this->phpParser(), fn() => $this->functionReflector());
+                return $this->astLocator ??= new AstLocator($this->phpParser(), fn() => $this->reflector('function'));
             }
 
             public function sourceStubber(): SourceStubber
@@ -110,7 +120,7 @@ class Reflection
         };
     }
 
-    public static function reflectionOf($target): Reflector
+    public static function reflectionOf($target): \Reflector
     {
         assert(is_string($target) || is_array($target) || is_object($target));
 
@@ -190,7 +200,8 @@ class Reflection
                 case $reflector instanceof \ReflectionClass:
                     if ($reflector->isAnonymous()) {
                         // @fixme ReflectionClass::createFromInstance();
-                        $locatedSource = new LocatedSource(file_get_contents($reflector->getFileName()), $reflector->getFileName());
+                        $filename = $reflector->getFileName();
+                        $locatedSource = new LocatedSource(file_get_contents($filename), $filename, $filename);
 
                         /** @var Node\Stmt\Class_ $node */
                         $nodes = self::getConfiguration()->phpParser()->parse($locatedSource->getSource());
@@ -202,9 +213,9 @@ class Reflection
                                 }
                             }
                         });
-                        return ReflectionClass::createFromNode(self::getConfiguration()->classReflector(), $node, $locatedSource);
+                        return ReflectionClass::createFromNode(self::getConfiguration()->reflector('class'), $node, $locatedSource);
                     }
-                    return self::getConfiguration()->classReflector()->reflect($reflector->getName());
+                    return self::getConfiguration()->reflector('class')->reflectClass($reflector->getName());
 
                 case $reflector instanceof \ReflectionClassConstant:
                     return $_($reflector->getDeclaringClass())->getReflectionConstant($reflector->getName());
@@ -216,7 +227,8 @@ class Reflection
                 case $reflector instanceof \ReflectionFunction:
                     if ($reflector->isClosure()) {
                         // @fixme return ReflectionFunction::createFromClosure($reflector->getClosure());
-                        $locatedSource = new LocatedSource(file_get_contents($reflector->getFileName()), $reflector->getFileName());
+                        $filename = $reflector->getFileName();
+                        $locatedSource = new LocatedSource(file_get_contents($filename), $filename, $filename);
 
                         /** @var Node\Stmt\Function_ $node */
                         $nodes = self::getConfiguration()->phpParser()->parse($locatedSource->getSource());
@@ -228,12 +240,12 @@ class Reflection
                                 }
                             }
                         });
-                        return ReflectionFunction::createFromNode(self::getConfiguration()->functionReflector(), $node, $locatedSource);
+                        return ReflectionFunction::createFromNode(self::getConfiguration()->reflector('function'), $node, $locatedSource);
                     }
                     if ($reflector instanceof \ReflectionMethod) {
                         return $_($reflector->getDeclaringClass())->getMethod($reflector->getName());
                     }
-                    return self::getConfiguration()->functionReflector()->reflect($reflector->getName());
+                    return self::getConfiguration()->reflector('function')->reflectFunction($reflector->getName());
 
                 case $reflector instanceof \ReflectionParameter:
                     return $_($reflector->getDeclaringFunction())->getParameter($reflector->getName());
