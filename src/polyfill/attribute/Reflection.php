@@ -161,23 +161,28 @@ class Reflection
         throw new UnexpectedValueException(sprintf('%s is not supported', json_encode($target)));
     }
 
-    public static function getId(\Reflector $reflector): string
+    public static function getId(object $reflector): string
     {
         return ($_ = function ($reflector) use (&$_) {
             switch (true) {
                 case $reflector instanceof \ReflectionClass:
+                case $reflector instanceof ReflectionClass:
                     return $reflector->getName();
 
                 case $reflector instanceof \ReflectionClassConstant:
+                case $reflector instanceof ReflectionClassConstant:
                     return $_($reflector->getDeclaringClass()) . '::' . $reflector->getName();
 
                 case $reflector instanceof \ReflectionProperty:
+                case $reflector instanceof ReflectionProperty:
                     return $_($reflector->getDeclaringClass()) . '::$' . $reflector->getName();
 
                 case $reflector instanceof \ReflectionMethod:
+                case $reflector instanceof ReflectionMethod:
                     return $_($reflector->getDeclaringClass()) . '::' . $reflector->getName() . '()';
 
                 case $reflector instanceof \ReflectionFunction:
+                case $reflector instanceof ReflectionFunction:
                     // closures on the same line are considered identical
                     if ($reflector->isClosure()) {
                         return $reflector->getFileName() . '@' . $reflector->getStartLine() . '-' . $reflector->getEndLine() . '()';
@@ -185,6 +190,7 @@ class Reflection
                     return $reflector->getName() . '()';
 
                 case $reflector instanceof \ReflectionParameter:
+                case $reflector instanceof ReflectionParameter:
                     return $_($reflector->getDeclaringFunction()) . '#' . $reflector->getPosition();
             }
         })($reflector);
@@ -193,7 +199,7 @@ class Reflection
     /** @var object|ReflectionClass|ReflectionClassConstant|ReflectionProperty|ReflectionFunctionAbstract|ReflectionParameter */
     private object $reflector;
 
-    public function __construct(\Reflector $reflector)
+    public function __construct(object $reflector)
     {
         $this->reflector = ($_ = function ($reflector) use (&$_) {
             switch (true) {
@@ -249,6 +255,9 @@ class Reflection
 
                 case $reflector instanceof \ReflectionParameter:
                     return $_($reflector->getDeclaringFunction())->getParameter($reflector->getName());
+
+                case strpos(get_class($reflector), 'Roave\\BetterReflection\\') === 0:
+                    return $reflector;
             }
 
             throw new UnexpectedValueException(sprintf('%s is not supported', get_class($reflector)));

@@ -7,7 +7,6 @@ use Attribute;
 use GlobalMagic;
 use Psr\SimpleCache\CacheInterface;
 use ReflectionAttribute;
-use ReflectionClass;
 use ReflectionFunction;
 use ReflectionObject;
 use ryunosuke\polyfill\attribute\Provider;
@@ -84,11 +83,14 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
         Provider::setCacheConfig(null);
     }
 
-    function test_getAttributes()
+    /**
+     * @dataProvider provideClassReflector
+     */
+    function test_getAttributes($reflector)
     {
         $provider = new Provider();
 
-        $attributes = $provider->getAttributes(new ReflectionClass(SubConcrete::class));
+        $attributes = $provider->getAttributes($reflector(SubConcrete::class));
         $this->assertCount(3, $attributes);
         $this->assertEquals(ClassAttribute::class, $attributes[0]->getName());
         $this->assertEquals(['class3'], $attributes[0]->getArguments());
@@ -97,44 +99,47 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
         $this->assertEquals(MagicAttribute::class, $attributes[2]->getName());
         $this->assertEquals(['class5'], $attributes[2]->getArguments());
 
-        $attributes = $provider->getAttributes(new ReflectionClass(SubConcrete::class), ClassAttribute::class, ReflectionAttribute::IS_INSTANCEOF);
+        $attributes = $provider->getAttributes($reflector(SubConcrete::class), ClassAttribute::class, ReflectionAttribute::IS_INSTANCEOF);
         $this->assertCount(2, $attributes);
         $this->assertEquals(ClassAttribute::class, $attributes[0]->getName());
         $this->assertEquals(['class3'], $attributes[0]->getArguments());
         $this->assertEquals(ClassAttributeSub::class, $attributes[1]->getName());
         $this->assertEquals(['class4'], $attributes[1]->getArguments());
 
-        $attributes = $provider->getAttributes(new ReflectionClass(SubConcrete::class), ClassAttribute::class);
+        $attributes = $provider->getAttributes($reflector(SubConcrete::class), ClassAttribute::class);
         $this->assertCount(1, $attributes);
         $this->assertEquals(ClassAttribute::class, $attributes[0]->getName());
         $this->assertEquals(['class3'], $attributes[0]->getArguments());
 
-        $attributes = $provider->getAttributes(new ReflectionClass(SubConcrete::class), ClassAttributeSub::class);
+        $attributes = $provider->getAttributes($reflector(SubConcrete::class), ClassAttributeSub::class);
         $this->assertCount(1, $attributes);
         $this->assertEquals(ClassAttributeSub::class, $attributes[0]->getName());
         $this->assertEquals(['class4'], $attributes[0]->getArguments());
 
-        $attributes = $provider->getAttributes(new ReflectionClass(SubConcrete::class), 'UndefinedAttribute');
+        $attributes = $provider->getAttributes($reflector(SubConcrete::class), 'UndefinedAttribute');
         $this->assertCount(0, $attributes);
     }
 
-    function test_getAttribute()
+    /**
+     * @dataProvider provideClassReflector
+     */
+    function test_getAttribute($reflector)
     {
         $provider = new Provider();
 
-        $attribute = $provider->getAttribute(new ReflectionClass(SubConcrete::class), ClassAttribute::class);
+        $attribute = $provider->getAttribute($reflector(SubConcrete::class), ClassAttribute::class);
         $this->assertEquals(ClassAttribute::class, $attribute->getName());
         $this->assertEquals(['class3'], $attribute->getArguments());
 
-        $attribute = $provider->getAttribute(new ReflectionClass(SubConcrete::class), ClassAttributeSub::class);
+        $attribute = $provider->getAttribute($reflector(SubConcrete::class), ClassAttributeSub::class);
         $this->assertEquals(ClassAttributeSub::class, $attribute->getName());
         $this->assertEquals(['class4'], $attribute->getArguments());
 
-        $attribute = $provider->getAttribute(new ReflectionClass(SubConcrete::class), MagicAttribute::class);
+        $attribute = $provider->getAttribute($reflector(SubConcrete::class), MagicAttribute::class);
         $this->assertEquals(MagicAttribute::class, $attribute->getName());
         $this->assertEquals(['class5'], $attribute->getArguments());
 
-        $attribute = $provider->getAttribute(new ReflectionClass(SubConcrete::class), 'UndefinedAttribute');
+        $attribute = $provider->getAttribute($reflector(SubConcrete::class), 'UndefinedAttribute');
         $this->assertNull($attribute);
     }
 
@@ -155,11 +160,14 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
         $this->assertEquals(['function1'], $attribute->getArguments());
     }
 
-    function test_ClassAttribute()
+    /**
+     * @dataProvider provideClassReflector
+     */
+    function test_ClassAttribute($reflector)
     {
         $provider = new Provider();
 
-        $attributes = $provider->getAttributes(new ReflectionClass(Concrete::class));
+        $attributes = $provider->getAttributes($reflector(Concrete::class));
         $this->assertCount(2, $attributes);
         $this->assertEquals(ClassAttribute::class, $attributes[0]->getName());
         $this->assertEquals(ClassAttribute::class, $attributes[1]->getName());
@@ -171,11 +179,14 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
         $this->assertTrue($attributes[1]->isRepeated());
     }
 
-    function test_ClassConstantAttribute()
+    /**
+     * @dataProvider provideClassReflector
+     */
+    function test_ClassConstantAttribute($reflector)
     {
         $provider = new Provider();
 
-        $attributes = $provider->getAttributes((new ReflectionClass(Concrete::class))->getReflectionConstant('C'));
+        $attributes = $provider->getAttributes(($reflector(Concrete::class))->getReflectionConstant('C'));
         $this->assertCount(2, $attributes);
         $this->assertEquals(ClassConstantAttribute::class, $attributes[0]->getName());
         $this->assertEquals(ClassConstantAttribute::class, $attributes[1]->getName());
@@ -187,11 +198,14 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
         $this->assertTrue($attributes[1]->isRepeated());
     }
 
-    function test_PropertyAttribute()
+    /**
+     * @dataProvider provideClassReflector
+     */
+    function test_PropertyAttribute($reflector)
     {
         $provider = new Provider();
 
-        $attributes = $provider->getAttributes((new ReflectionClass(Concrete::class))->getProperty('p'));
+        $attributes = $provider->getAttributes(($reflector(Concrete::class))->getProperty('p'));
         $this->assertCount(2, $attributes);
         $this->assertEquals(PropertyAttribute::class, $attributes[0]->getName());
         $this->assertEquals(PropertyAttribute::class, $attributes[1]->getName());
@@ -203,11 +217,14 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
         $this->assertTrue($attributes[1]->isRepeated());
     }
 
-    function test_MethodAttribute()
+    /**
+     * @dataProvider provideClassReflector
+     */
+    function test_MethodAttribute($reflector)
     {
         $provider = new Provider();
 
-        $attributes = $provider->getAttributes((new ReflectionClass(Concrete::class))->getMethod('m'));
+        $attributes = $provider->getAttributes(($reflector(Concrete::class))->getMethod('m'));
         $this->assertCount(2, $attributes);
         $this->assertEquals(MethodAttribute::class, $attributes[0]->getName());
         $this->assertEquals(MethodAttribute::class, $attributes[1]->getName());
@@ -219,12 +236,15 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
         $this->assertTrue($attributes[1]->isRepeated());
     }
 
-    function test_MethodParameterAttribute()
+    /**
+     * @dataProvider provideClassReflector
+     */
+    function test_MethodParameterAttribute($reflector)
     {
         $provider = new Provider();
 
         foreach ([0, 1] as $n) {
-            $attributes = $provider->getAttributes((new ReflectionClass(Concrete::class))->getMethod('m')->getParameters()[$n]);
+            $attributes = $provider->getAttributes(($reflector(Concrete::class))->getMethod('m')->getParameters()[$n]);
             $this->assertCount(2, $attributes);
             $this->assertEquals(ParameterAttribute::class, $attributes[0]->getName());
             $this->assertEquals(ParameterAttribute::class, $attributes[1]->getName());
@@ -237,11 +257,14 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
         }
     }
 
-    function test_FunctionAttribute()
+    /**
+     * @dataProvider provideFunctionReflector
+     */
+    function test_FunctionAttribute($reflector)
     {
         $provider = new Provider();
 
-        $attributes = $provider->getAttributes((new ReflectionFunction(__NAMESPACE__ . '\\stub\\concrete')));
+        $attributes = $provider->getAttributes(($reflector(__NAMESPACE__ . '\\stub\\concrete')));
         $this->assertCount(2, $attributes);
         $this->assertEquals(FunctionAttribute::class, $attributes[0]->getName());
         $this->assertEquals(FunctionAttribute::class, $attributes[1]->getName());
@@ -253,12 +276,15 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
         $this->assertTrue($attributes[1]->isRepeated());
     }
 
-    function test_FunctionParameterAttribute()
+    /**
+     * @dataProvider provideFunctionReflector
+     */
+    function test_FunctionParameterAttribute($reflector)
     {
         $provider = new Provider();
 
         foreach ([0, 1] as $n) {
-            $attributes = $provider->getAttributes((new ReflectionFunction(__NAMESPACE__ . '\\stub\\concrete'))->getParameters()[$n]);
+            $attributes = $provider->getAttributes(($reflector(__NAMESPACE__ . '\\stub\\concrete'))->getParameters()[$n]);
             $this->assertCount(2, $attributes);
             $this->assertEquals(ParameterAttribute::class, $attributes[0]->getName());
             $this->assertEquals(ParameterAttribute::class, $attributes[1]->getName());
@@ -271,17 +297,20 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
         }
     }
 
-    function test_GlobalMagicClassAttribute()
+    /**
+     * @dataProvider provideClassReflector
+     */
+    function test_GlobalMagicClassAttribute($reflector, $data)
     {
         $provider = new Provider();
 
-        $reflection = new ReflectionClass(GlobalMagic::class);
+        $reflection = $reflector(GlobalMagic::class);
         $attributes = $provider->getAttributes($reflection);
         $this->assertEquals(MagicAttribute::class, $attributes[0]->getName());
         $this->assertEquals([
             'dir'       => dirname(self::$stubfile),
             'file'      => self::$stubfile,
-            'line'      => $reflection->getStartLine() - 1,
+            'line'      => $reflection->getStartLine() + $data['line-offset'],
             'namespace' => '',
             'class'     => GlobalMagic::class,
             'trait'     => '',
@@ -290,17 +319,20 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
         ], $attributes[0]->getArguments());
     }
 
-    function test_MagicClassAttribute()
+    /**
+     * @dataProvider provideClassReflector
+     */
+    function test_MagicClassAttribute($reflector, $data)
     {
         $provider = new Provider();
 
-        $reflection = new ReflectionClass(Magic::class);
+        $reflection = $reflector(Magic::class);
         $attributes = $provider->getAttributes($reflection);
         $this->assertEquals(MagicAttribute::class, $attributes[0]->getName());
         $this->assertEquals([
             'dir'       => dirname(self::$stubfile),
             'file'      => self::$stubfile,
-            'line'      => $reflection->getStartLine() - 1,
+            'line'      => $reflection->getStartLine() + $data['line-offset'],
             'namespace' => __NAMESPACE__ . '\\stub',
             'class'     => Magic::class,
             'trait'     => '',
@@ -309,17 +341,20 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
         ], $attributes[0]->getArguments());
     }
 
-    function test_MagicClassConstantAttribute()
+    /**
+     * @dataProvider provideClassReflector
+     */
+    function test_MagicClassConstantAttribute($reflector, $data)
     {
         $provider = new Provider();
 
-        $reflection = (new ReflectionClass(Magic::class))->getReflectionConstant('C');
+        $reflection = ($reflector(Magic::class))->getReflectionConstant('C');
         $attributes = $provider->getAttributes($reflection);
         $this->assertEquals(MagicAttribute::class, $attributes[0]->getName());
         $this->assertEquals([
             'dir'       => dirname(self::$stubfile),
             'file'      => self::$stubfile,
-            'line'      => $reflection->getDeclaringClass()->getStartLine() - 1 + 3,
+            'line'      => $reflection->getDeclaringClass()->getStartLine() + $data['line-offset'] + 3,
             'namespace' => __NAMESPACE__ . '\\stub',
             'class'     => Magic::class,
             'trait'     => '',
@@ -328,17 +363,20 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
         ], $attributes[0]->getArguments());
     }
 
-    function test_MagicPropertyAttribute()
+    /**
+     * @dataProvider provideClassReflector
+     */
+    function test_MagicPropertyAttribute($reflector, $data)
     {
         $provider = new Provider();
 
-        $reflection = (new ReflectionClass(Magic::class))->getProperty('p');
+        $reflection = ($reflector(Magic::class))->getProperty('p');
         $attributes = $provider->getAttributes($reflection);
         $this->assertEquals(MagicAttribute::class, $attributes[0]->getName());
         $this->assertEquals([
             'dir'       => dirname(self::$stubfile),
             'file'      => self::$stubfile,
-            'line'      => $reflection->getDeclaringClass()->getStartLine() - 1 + 6,
+            'line'      => $reflection->getDeclaringClass()->getStartLine() + $data['line-offset'] + 6,
             'namespace' => __NAMESPACE__ . '\\stub',
             'class'     => Magic::class,
             'trait'     => '',
@@ -347,17 +385,20 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
         ], $attributes[0]->getArguments());
     }
 
-    function test_MagicMethodAttribute()
+    /**
+     * @dataProvider provideClassReflector
+     */
+    function test_MagicMethodAttribute($reflector, $data)
     {
         $provider = new Provider();
 
-        $reflection = (new ReflectionClass(Magic::class))->getMethod('m');
+        $reflection = ($reflector(Magic::class))->getMethod('m');
         $attributes = $provider->getAttributes($reflection);
         $this->assertEquals(MagicAttribute::class, $attributes[0]->getName());
         $this->assertEquals([
             'dir'       => dirname(self::$stubfile),
             'file'      => self::$stubfile,
-            'line'      => $reflection->getDeclaringClass()->getStartLine() - 1 + 9,
+            'line'      => $reflection->getDeclaringClass()->getStartLine() + $data['line-offset'] + 9,
             'namespace' => __NAMESPACE__ . '\\stub',
             'class'     => Magic::class,
             'trait'     => '',
@@ -366,18 +407,21 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
         ], $attributes[0]->getArguments());
     }
 
-    function test_MagicMethodParameterAttribute()
+    /**
+     * @dataProvider provideClassReflector
+     */
+    function test_MagicMethodParameterAttribute($reflector, $data)
     {
         $provider = new Provider();
 
         foreach ([0, 1] as $n) {
-            $reflection = (new ReflectionClass(Magic::class))->getMethod('m')->getParameters()[$n];
+            $reflection = ($reflector(Magic::class))->getMethod('m')->getParameters()[$n];
             $attributes = $provider->getAttributes($reflection);
             $this->assertEquals(MagicAttribute::class, $attributes[0]->getName());
             $this->assertEquals([
                 'dir'       => dirname(self::$stubfile),
                 'file'      => self::$stubfile,
-                'line'      => $reflection->getDeclaringClass()->getStartLine() - 1 + 11 + ($n * 2),
+                'line'      => $reflection->getDeclaringClass()->getStartLine() + $data['line-offset'] + 11 + ($n * 2),
                 'namespace' => __NAMESPACE__ . '\\stub',
                 'class'     => Magic::class,
                 'trait'     => '',
@@ -491,17 +535,20 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
         }
     }
 
-    function test_MagicFunctionAttribute()
+    /**
+     * @dataProvider provideFunctionReflector
+     */
+    function test_MagicFunctionAttribute($reflector, $data)
     {
         $provider = new Provider();
 
-        $reflection = (new ReflectionFunction(__NAMESPACE__ . '\\stub\\magic'));
+        $reflection = ($reflector(__NAMESPACE__ . '\\stub\\magic'));
         $attributes = $provider->getAttributes($reflection);
         $this->assertEquals(MagicAttribute::class, $attributes[0]->getName());
         $this->assertEquals([
             'dir'       => dirname(self::$stubfile),
             'file'      => self::$stubfile,
-            'line'      => $reflection->getStartLine() - 1,
+            'line'      => $reflection->getStartLine() + $data['line-offset'],
             'namespace' => __NAMESPACE__ . '\\stub',
             'class'     => '',
             'trait'     => '',
@@ -510,18 +557,21 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
         ], $attributes[0]->getArguments());
     }
 
-    function test_MagicFunctionParameterAttribute()
+    /**
+     * @dataProvider provideFunctionReflector
+     */
+    function test_MagicFunctionParameterAttribute($reflector, $data)
     {
         $provider = new Provider();
 
         foreach ([0, 1] as $n) {
-            $reflection = (new ReflectionFunction(__NAMESPACE__ . '\\stub\\magic'))->getParameters()[$n];
+            $reflection = ($reflector(__NAMESPACE__ . '\\stub\\magic'))->getParameters()[$n];
             $attributes = $provider->getAttributes($reflection);
             $this->assertEquals(MagicAttribute::class, $attributes[0]->getName());
             $this->assertEquals([
                 'dir'       => dirname(self::$stubfile),
                 'file'      => self::$stubfile,
-                'line'      => $reflection->getDeclaringFunction()->getStartLine() - 1 + 2 + ($n * 2),
+                'line'      => $reflection->getDeclaringFunction()->getStartLine() + $data['line-offset'] + 2 + ($n * 2),
                 'namespace' => __NAMESPACE__ . '\\stub',
                 'class'     => '',
                 'trait'     => '',
@@ -531,38 +581,41 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
         }
     }
 
-    function test_misc()
+    /**
+     * @dataProvider provideClassReflector
+     */
+    function test_misc($reflector, $data)
     {
         $provider = new Provider();
 
         # for multiple const
-        $attribute = $provider->getAttribute((new ReflectionClass(Multiple::class))->getReflectionConstant('C'));
+        $attribute = $provider->getAttribute(($reflector(Multiple::class))->getReflectionConstant('C'));
         $this->assertEquals(ClassConstantAttribute::class, $attribute->getName());
         $this->assertEquals(['constantM'], $attribute->getArguments());
-        $attribute = $provider->getAttribute((new ReflectionClass(Multiple::class))->getReflectionConstant('C1'));
+        $attribute = $provider->getAttribute(($reflector(Multiple::class))->getReflectionConstant('C1'));
         $this->assertEquals(ClassConstantAttribute::class, $attribute->getName());
         $this->assertEquals(['constantM12'], $attribute->getArguments());
-        $attribute = $provider->getAttribute((new ReflectionClass(Multiple::class))->getReflectionConstant('C2'));
+        $attribute = $provider->getAttribute(($reflector(Multiple::class))->getReflectionConstant('C2'));
         $this->assertEquals(ClassConstantAttribute::class, $attribute->getName());
         $this->assertEquals(['constantM12'], $attribute->getArguments());
 
         # for multiple property
-        $attribute = $provider->getAttribute((new ReflectionClass(Multiple::class))->getProperty('p'));
+        $attribute = $provider->getAttribute(($reflector(Multiple::class))->getProperty('p'));
         $this->assertEquals(PropertyAttribute::class, $attribute->getName());
         $this->assertEquals(['propertyM'], $attribute->getArguments());
-        $attribute = $provider->getAttribute((new ReflectionClass(Multiple::class))->getProperty('p1'));
+        $attribute = $provider->getAttribute(($reflector(Multiple::class))->getProperty('p1'));
         $this->assertEquals(PropertyAttribute::class, $attribute->getName());
         $this->assertEquals(['propertyM12'], $attribute->getArguments());
-        $attribute = $provider->getAttribute((new ReflectionClass(Multiple::class))->getProperty('p2'));
+        $attribute = $provider->getAttribute(($reflector(Multiple::class))->getProperty('p2'));
         $this->assertEquals(PropertyAttribute::class, $attribute->getName());
         $this->assertEquals(['propertyM12'], $attribute->getArguments());
 
         # for literal/expression
-        $reflection = new ReflectionClass(Misc::class);
+        $reflection = $reflector(Misc::class);
         $this->assertEquals([
             'builtin'    => [null, false, true],
             'const'      => [M_PI, ArrayObject::ARRAY_AS_PROPS, ArrayObject::class],
-            'magic'      => [Misc::class, $reflection->getStartLine() - 1],
+            'magic'      => [Misc::class, $reflection->getStartLine() + $data['line-offset']],
             'expression' => ['hello' . 'world', 3.14 * 2, 1 << 8],
             'nestarray'  => [
                 'x' => [

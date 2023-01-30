@@ -9,7 +9,6 @@ use ReflectionClassConstant;
 use ReflectionFunctionAbstract;
 use ReflectionParameter;
 use ReflectionProperty;
-use Reflector;
 
 class Provider
 {
@@ -39,13 +38,13 @@ class Provider
      *
      * @api
      *
-     * @param ReflectionClass|ReflectionClassConstant|ReflectionProperty|ReflectionFunctionAbstract|ReflectionParameter $reflector
+     * @param object|ReflectionClass|ReflectionClassConstant|ReflectionProperty|ReflectionFunctionAbstract|ReflectionParameter $reflector
      * @return ReflectionAttribute[]
      */
-    public function getAttributes(Reflector $reflector, ?string $name = null, int $flags = 0): array
+    public function getAttributes(object $reflector, ?string $name = null, int $flags = 0): array
     {
-        // delegate php8's original method
-        if (method_exists($reflector, 'getAttributes')) {
+        // delegate php8's original method. moreover BetterReflection does not have arguments
+        if (method_exists($reflector, 'getAttributes') && strpos(get_class($reflector), 'Roave\\BetterReflection\\') !== 0) {
             return $reflector->getAttributes($name, $flags); // @codeCoverageIgnore
         }
 
@@ -82,6 +81,53 @@ class Provider
         // create
         $ref = new ReflectionClass(ReflectionAttribute::class);
         return array_map(function ($attribute) use ($ref) {
+            // Internal ReflectionAttribute can never be instantiated
+            // @codeCoverageIgnoreStart
+            if ($ref->isInternal()) {
+                return new class(...$attribute) extends ReflectionAttribute {
+                    private string $_name;
+                    private array  $_arguments;
+                    private bool   $_repeated;
+                    private int    $_target;
+
+                    /** @noinspection PhpMissingParentConstructorInspection */
+                    public function __construct(string $name, array $arguments, bool $repeated, int $target)
+                    {
+                        $this->_name = $name;
+                        $this->_arguments = $arguments;
+                        $this->_repeated = $repeated;
+                        $this->_target = $target;
+                    }
+
+                    public function getName(): string
+                    {
+                        return $this->_name;
+                    }
+
+                    public function getArguments(): array
+                    {
+                        return $this->_arguments;
+                    }
+
+                    public function isRepeated(): bool
+                    {
+                        return $this->_repeated;
+                    }
+
+                    public function getTarget(): int
+                    {
+                        return $this->_target;
+                    }
+
+                    public function newInstance(): object
+                    {
+                        $name = $this->_name;
+                        return new $name(...$this->_arguments);
+                    }
+                };
+            }
+            // @codeCoverageIgnoreEnd
+
             $object = $ref->newInstanceWithoutConstructor();
             $constructor = $ref->getConstructor();
             $constructor->setAccessible(true);
@@ -95,10 +141,10 @@ class Provider
      *
      * @api
      *
-     * @param ReflectionClass|ReflectionClassConstant|ReflectionProperty|ReflectionFunctionAbstract|ReflectionParameter $reflector
+     * @param object|ReflectionClass|ReflectionClassConstant|ReflectionProperty|ReflectionFunctionAbstract|ReflectionParameter $reflector
      * @return ?ReflectionAttribute
      */
-    public function getAttribute(Reflector $reflector, ?string $name = null, int $flags = 0): ?ReflectionAttribute
+    public function getAttribute(object $reflector, ?string $name = null, int $flags = 0): ?ReflectionAttribute
     {
         return $this->getAttributes($reflector, $name, $flags)[0] ?? null;
     }

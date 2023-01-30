@@ -2,6 +2,7 @@
 namespace ryunosuke\Test;
 
 use ArrayAccess;
+use Closure;
 use PHPUnit\Framework\Constraint\ArraySubset;
 use PHPUnit\Framework\Error\Error;
 use PHPUnit\Framework\Exception;
@@ -9,7 +10,9 @@ use PHPUnit\Framework\InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionException;
+use ReflectionFunction;
 use ReflectionMethod;
+use ryunosuke\polyfill\attribute\Reflection;
 use Throwable;
 
 abstract class AbstractTestCase extends TestCase
@@ -22,6 +25,51 @@ abstract class AbstractTestCase extends TestCase
 
         self::$stubfile = realpath(__DIR__ . '/../stub.php');
         require_once self::$stubfile;
+    }
+
+    public static function betterReflection()
+    {
+        return Closure::bind(fn() => Reflection::getConfiguration(), null, Reflection::class)();
+    }
+
+    public static function provideClassReflector()
+    {
+        return [
+            'internal' => [
+                fn($class) => new ReflectionClass($class),
+                [
+                    'internal'    => true,
+                    'line-offset' => -1,
+                ],
+            ],
+            'better'   => [
+                fn($class) => self::betterReflection()->reflector('class')->reflectClass($class),
+                [
+                    'internal'    => false,
+                    'line-offset' => 0,
+                ],
+            ],
+        ];
+    }
+
+    public static function provideFunctionReflector()
+    {
+        return [
+            'internal' => [
+                fn($function) => new ReflectionFunction($function),
+                [
+                    'internal'    => true,
+                    'line-offset' => -1,
+                ],
+            ],
+            'better'   => [
+                fn($function) => self::betterReflection()->reflector('function')->reflectFunction($function),
+                [
+                    'internal'    => false,
+                    'line-offset' => 0,
+                ],
+            ],
+        ];
     }
 
     public static function forcedCallize($callable, $method = null)
@@ -97,6 +145,7 @@ abstract class AbstractTestCase extends TestCase
             }
             return;
         }
+        var_dump("$ex");
         self::fail(get_class($e) . ' is not thrown.');
     }
 

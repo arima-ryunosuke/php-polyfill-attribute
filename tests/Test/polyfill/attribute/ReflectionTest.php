@@ -76,16 +76,19 @@ class ReflectionTest extends \ryunosuke\Test\AbstractTestCase
         $this->assertEquals(Attribute::TARGET_METHOD, $reflection->getAttributeTarget());
     }
 
-    function test_ReflectionClass()
+    /**
+     * @dataProvider provideClassReflector
+     */
+    function test_ReflectionClass($reflector)
     {
-        $original = new ReflectionClass(Concrete::class);
+        $original = $reflector(Concrete::class);
         $reflection = new Reflection($original);
         $this->assertEquals(Concrete::class, Reflection::getId($original));
         $this->assertEquals(self::$stubfile, $reflection->getFileName());
         $this->assertEquals('', $reflection->getAnonymousClassName());
         $this->assertEquals(Attribute::TARGET_CLASS, $reflection->getAttributeTarget());
 
-        $original = new ReflectionClass(ConcreteTrait::class);
+        $original = $reflector(ConcreteTrait::class);
         $reflection = new Reflection($original);
         $this->assertEquals(ConcreteTrait::class, Reflection::getId($original));
         $this->assertEquals(self::$stubfile, $reflection->getFileName());
@@ -93,9 +96,12 @@ class ReflectionTest extends \ryunosuke\Test\AbstractTestCase
         $this->assertEquals(Attribute::TARGET_CLASS, $reflection->getAttributeTarget());
     }
 
-    function test_ReflectionClassConstant()
+    /**
+     * @dataProvider provideClassReflector
+     */
+    function test_ReflectionClassConstant($reflector)
     {
-        $original = (new ReflectionClass(Concrete::class))->getReflectionConstant('C');
+        $original = $reflector(Concrete::class)->getReflectionConstant('C');
         $reflection = new Reflection($original);
         $this->assertEquals(Concrete::class . '::C', Reflection::getId($original));
         $this->assertEquals(self::$stubfile, $reflection->getFileName());
@@ -103,16 +109,19 @@ class ReflectionTest extends \ryunosuke\Test\AbstractTestCase
         $this->assertEquals(Attribute::TARGET_CLASS_CONSTANT, $reflection->getAttributeTarget());
     }
 
-    function test_ReflectionProperty()
+    /**
+     * @dataProvider provideClassReflector
+     */
+    function test_ReflectionProperty($reflector)
     {
-        $original = (new ReflectionClass(Concrete::class))->getProperty('p');
+        $original = $reflector(Concrete::class)->getProperty('p');
         $reflection = new Reflection($original);
         $this->assertEquals(Concrete::class . '::$p', Reflection::getId($original));
         $this->assertEquals(self::$stubfile, $reflection->getFileName());
         $this->assertEquals('', $reflection->getAnonymousClassName());
         $this->assertEquals(Attribute::TARGET_PROPERTY, $reflection->getAttributeTarget());
 
-        $original = (new ReflectionClass(ConcreteTrait::class))->getProperty('p');
+        $original = $reflector(ConcreteTrait::class)->getProperty('p');
         $reflection = new Reflection($original);
         $this->assertEquals(ConcreteTrait::class . '::$p', Reflection::getId($original));
         $this->assertEquals(self::$stubfile, $reflection->getFileName());
@@ -120,16 +129,19 @@ class ReflectionTest extends \ryunosuke\Test\AbstractTestCase
         $this->assertEquals(Attribute::TARGET_PROPERTY, $reflection->getAttributeTarget());
     }
 
-    function test_ReflectionMethod()
+    /**
+     * @dataProvider provideClassReflector
+     */
+    function test_ReflectionMethod($reflector)
     {
-        $original = (new ReflectionClass(Concrete::class))->getMethod('m');
+        $original = $reflector(Concrete::class)->getMethod('m');
         $reflection = new Reflection($original);
         $this->assertEquals(Concrete::class . '::m()', Reflection::getId($original));
         $this->assertEquals(self::$stubfile, $reflection->getFileName());
         $this->assertEquals('', $reflection->getAnonymousClassName());
         $this->assertEquals(Attribute::TARGET_METHOD, $reflection->getAttributeTarget());
 
-        $original = (new ReflectionClass(ConcreteTrait::class))->getMethod('m');
+        $original = $reflector(ConcreteTrait::class)->getMethod('m');
         $reflection = new Reflection($original);
         $this->assertEquals(ConcreteTrait::class . '::m()', Reflection::getId($original));
         $this->assertEquals(self::$stubfile, $reflection->getFileName());
@@ -137,16 +149,19 @@ class ReflectionTest extends \ryunosuke\Test\AbstractTestCase
         $this->assertEquals(Attribute::TARGET_METHOD, $reflection->getAttributeTarget());
     }
 
-    function test_ReflectionMethodParameter()
+    /**
+     * @dataProvider provideClassReflector
+     */
+    function test_ReflectionMethodParameter($reflector)
     {
-        $original = (new ReflectionClass(Concrete::class))->getMethod('m')->getParameters()[0];
+        $original = $reflector(Concrete::class)->getMethod('m')->getParameters()[0];
         $reflection = new Reflection($original);
         $this->assertEquals(Concrete::class . '::m()#0', Reflection::getId($original));
         $this->assertEquals(self::$stubfile, $reflection->getFileName());
         $this->assertEquals('', $reflection->getAnonymousClassName());
         $this->assertEquals(Attribute::TARGET_PARAMETER, $reflection->getAttributeTarget());
 
-        $original = (new ReflectionClass(ConcreteTrait::class))->getMethod('m')->getParameters()[0];
+        $original = $reflector(ConcreteTrait::class)->getMethod('m')->getParameters()[0];
         $reflection = new Reflection($original);
         $this->assertEquals(ConcreteTrait::class . '::m()#0', Reflection::getId($original));
         $this->assertEquals(self::$stubfile, $reflection->getFileName());
@@ -154,9 +169,12 @@ class ReflectionTest extends \ryunosuke\Test\AbstractTestCase
         $this->assertEquals(Attribute::TARGET_PARAMETER, $reflection->getAttributeTarget());
     }
 
-    function test_ReflectionFunction()
+    /**
+     * @dataProvider provideFunctionReflector
+     */
+    function test_ReflectionFunction($reflector)
     {
-        $original = new ReflectionFunction(__NAMESPACE__ . '\\stub\\concrete');
+        $original = $reflector(__NAMESPACE__ . '\\stub\\concrete');
         $reflection = new Reflection($original);
         $this->assertEquals(__NAMESPACE__ . '\\stub\\concrete()', Reflection::getId($original));
         $this->assertEquals(self::$stubfile, $reflection->getFileName());
@@ -164,9 +182,12 @@ class ReflectionTest extends \ryunosuke\Test\AbstractTestCase
         $this->assertEquals(Attribute::TARGET_FUNCTION, $reflection->getAttributeTarget());
     }
 
-    function test_ReflectionFunctionParameter()
+    /**
+     * @dataProvider provideFunctionReflector
+     */
+    function test_ReflectionFunctionParameter($reflector)
     {
-        $original = (new ReflectionFunction(__NAMESPACE__ . '\\stub\\concrete'))->getParameters()[0];
+        $original = $reflector(__NAMESPACE__ . '\\stub\\concrete')->getParameters()[0];
         $reflection = new Reflection($original);
         $this->assertEquals(__NAMESPACE__ . '\\stub\\concrete()#0', Reflection::getId($original));
         $this->assertEquals(self::$stubfile, $reflection->getFileName());
