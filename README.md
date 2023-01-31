@@ -51,6 +51,15 @@ This works the same way in php7/8.
   - minor: add feature (no BC break)
   - patch: fix bug (no BC break)
 
+### 1.2.0
+
+- [feature] support BetterReflection attribute
+- [feature] support both BetterReflection 4/5
+
+### 1.1.0
+
+- [feature][Provider] add cache per instance
+
 ### 1.0.0
 
 - publish
