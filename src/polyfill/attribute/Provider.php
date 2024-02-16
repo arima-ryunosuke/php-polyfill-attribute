@@ -22,15 +22,21 @@ class Provider
      * @api
      *
      * @param ?CacheInterface $cache if null, disable cache
+     * @return CacheInterface previous cache
      */
-    public static function setCacheConfig(?CacheInterface $cache = null)
+    public static function setCacheConfig(?CacheInterface $cache = null): ?CacheInterface
     {
+        $current = self::$defaultCache;
         self::$defaultCache = $cache;
+        return $current;
     }
 
     public function __construct(?CacheInterface $cache = null)
     {
         $this->cache = $cache ?? self::$defaultCache ?? null;
+        if ($this->cache === null) {
+            trigger_error('CacheInterface is not set, but it is strongly recommended to be set.', E_USER_DEPRECATED);
+        }
     }
 
     /**

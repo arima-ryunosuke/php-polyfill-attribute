@@ -33,6 +33,11 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
             return $this->markTestSkipped();
         }
 
+        $old = Provider::setCacheConfig(null);
+
+        @new Provider();
+        $this->assertStringContainsString('CacheInterface is not set', error_get_last()['message']);
+
         $cache = new class () implements CacheInterface {
             public $items = [];
 
@@ -80,7 +85,7 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
         $this->assertLessThan($time1, $time2);
         $this->assertLessThan($time3, $time2);
 
-        Provider::setCacheConfig(null);
+        Provider::setCacheConfig($old);
     }
 
     /**
