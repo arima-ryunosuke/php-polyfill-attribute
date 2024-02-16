@@ -141,43 +141,4 @@ class Provider
             return $object;
         }, $attributes);
     }
-
-    /**
-     * single version of getAttributes
-     *
-     * @api
-     *
-     * @param object|ReflectionClass|ReflectionClassConstant|ReflectionProperty|ReflectionFunctionAbstract|ReflectionParameter $reflector
-     * @return ?ReflectionAttribute
-     */
-    public function getAttribute(object $reflector, ?string $name = null, int $flags = 0): ?ReflectionAttribute
-    {
-        return $this->getAttributes($reflector, $name, $flags)[0] ?? null;
-    }
-
-    /**
-     * get Attribute directly without Reflection instance
-     *
-     * @api
-     *
-     * @param string|array|object $target
-     * @return ReflectionAttribute[]
-     */
-    public function getAttributesOf($target, ?string $name = null, int $flags = 0): array
-    {
-        return $this->getAttributes(Reflection::reflectionOf($target), $name, $flags);
-    }
-
-    /**
-     * single version of getAttributesOf
-     *
-     * @api
-     *
-     * @param string|array|object $target
-     * @return ?ReflectionAttribute
-     */
-    public function getAttributeOf($target, ?string $name = null, int $flags = 0): ?ReflectionAttribute
-    {
-        return $this->getAttributesOf($target, $name, $flags)[0] ?? null;
-    }
 }

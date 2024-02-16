@@ -90,7 +90,7 @@ if (!class_exists(ReflectionAttribute::class)) {
             // this error check is meaningless in an production. but it's a heavy process a little, so look at 'zend.assertions'
             if (ini_get('zend.assertions') == 1) {
                 static $provider = null;
-                $attributeReflection = ($provider ??= new \ryunosuke\polyfill\attribute\Provider())->getAttribute($reflectionClass, Attribute::class, ReflectionAttribute::IS_INSTANCEOF);
+                $attributeReflection = ($provider ??= new \ryunosuke\polyfill\attribute\Provider())->getAttributes($reflectionClass, Attribute::class, ReflectionAttribute::IS_INSTANCEOF)[0] ?? null;
 
                 if ($attributeReflection === null) {
                     throw new Error(sprintf('Attempting to use non-attribute class "%s" as attribute', $this->name));

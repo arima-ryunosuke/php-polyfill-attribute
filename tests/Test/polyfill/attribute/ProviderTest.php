@@ -19,7 +19,6 @@ use ryunosuke\Test\polyfill\attribute\Attributes\MethodAttribute;
 use ryunosuke\Test\polyfill\attribute\Attributes\ParameterAttribute;
 use ryunosuke\Test\polyfill\attribute\Attributes\PropertyAttribute;
 use ryunosuke\Test\polyfill\attribute\stub\Concrete;
-use ryunosuke\Test\polyfill\attribute\stub\ConcreteTrait;
 use ryunosuke\Test\polyfill\attribute\stub\Magic;
 use ryunosuke\Test\polyfill\attribute\stub\Misc;
 use ryunosuke\Test\polyfill\attribute\stub\Multiple;
@@ -27,7 +26,10 @@ use ryunosuke\Test\polyfill\attribute\stub\SubConcrete;
 
 class ProviderTest extends \ryunosuke\Test\AbstractTestCase
 {
-    function test_cache()
+    /**
+     * @dataProvider provideClassReflector
+     */
+    function test_cache($reflector)
     {
         if (version_compare(PHP_VERSION, 8) >= 0) {
             return $this->markTestSkipped();
@@ -69,17 +71,17 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
         $provider = new Provider();
 
         $micrtime = microtime(true);
-        $provider->getAttributeOf(Concrete::class);
+        $provider->getAttributes($reflector(Concrete::class))[0];
         $time1 = microtime(true) - $micrtime;
 
         $micrtime = microtime(true);
-        $provider->getAttributeOf(Concrete::class);
+        $provider->getAttributes($reflector(Concrete::class))[0];
         $time2 = microtime(true) - $micrtime;
 
         $cache->items = [];
 
         $micrtime = microtime(true);
-        $provider->getAttributeOf(Concrete::class);
+        $provider->getAttributes($reflector(Concrete::class))[0];
         $time3 = microtime(true) - $micrtime;
 
         $this->assertLessThan($time1, $time2);
@@ -123,46 +125,6 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
 
         $attributes = $provider->getAttributes($reflector(SubConcrete::class), 'UndefinedAttribute');
         $this->assertCount(0, $attributes);
-    }
-
-    /**
-     * @dataProvider provideClassReflector
-     */
-    function test_getAttribute($reflector)
-    {
-        $provider = new Provider();
-
-        $attribute = $provider->getAttribute($reflector(SubConcrete::class), ClassAttribute::class);
-        $this->assertEquals(ClassAttribute::class, $attribute->getName());
-        $this->assertEquals(['class3'], $attribute->getArguments());
-
-        $attribute = $provider->getAttribute($reflector(SubConcrete::class), ClassAttributeSub::class);
-        $this->assertEquals(ClassAttributeSub::class, $attribute->getName());
-        $this->assertEquals(['class4'], $attribute->getArguments());
-
-        $attribute = $provider->getAttribute($reflector(SubConcrete::class), MagicAttribute::class);
-        $this->assertEquals(MagicAttribute::class, $attribute->getName());
-        $this->assertEquals(['class5'], $attribute->getArguments());
-
-        $attribute = $provider->getAttribute($reflector(SubConcrete::class), 'UndefinedAttribute');
-        $this->assertNull($attribute);
-    }
-
-    function test_getAttributeOf()
-    {
-        $provider = new Provider();
-
-        $attribute = $provider->getAttributeOf(Concrete::class);
-        $this->assertEquals(ClassAttribute::class, $attribute->getName());
-        $this->assertEquals(['class1'], $attribute->getArguments());
-
-        $attribute = $provider->getAttributeOf(ConcreteTrait::class);
-        $this->assertEquals(ClassAttribute::class, $attribute->getName());
-        $this->assertEquals(['class1'], $attribute->getArguments());
-
-        $attribute = $provider->getAttributeOf(__NAMESPACE__ . '\\stub\\concrete');
-        $this->assertEquals(FunctionAttribute::class, $attribute->getName());
-        $this->assertEquals(['function1'], $attribute->getArguments());
     }
 
     /**
@@ -594,24 +556,24 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
         $provider = new Provider();
 
         # for multiple const
-        $attribute = $provider->getAttribute(($reflector(Multiple::class))->getReflectionConstant('C'));
+        $attribute = $provider->getAttributes(($reflector(Multiple::class))->getReflectionConstant('C'))[0];
         $this->assertEquals(ClassConstantAttribute::class, $attribute->getName());
         $this->assertEquals(['constantM'], $attribute->getArguments());
-        $attribute = $provider->getAttribute(($reflector(Multiple::class))->getReflectionConstant('C1'));
+        $attribute = $provider->getAttributes(($reflector(Multiple::class))->getReflectionConstant('C1'))[0];
         $this->assertEquals(ClassConstantAttribute::class, $attribute->getName());
         $this->assertEquals(['constantM12'], $attribute->getArguments());
-        $attribute = $provider->getAttribute(($reflector(Multiple::class))->getReflectionConstant('C2'));
+        $attribute = $provider->getAttributes(($reflector(Multiple::class))->getReflectionConstant('C2'))[0];
         $this->assertEquals(ClassConstantAttribute::class, $attribute->getName());
         $this->assertEquals(['constantM12'], $attribute->getArguments());
 
         # for multiple property
-        $attribute = $provider->getAttribute(($reflector(Multiple::class))->getProperty('p'));
+        $attribute = $provider->getAttributes(($reflector(Multiple::class))->getProperty('p'))[0];
         $this->assertEquals(PropertyAttribute::class, $attribute->getName());
         $this->assertEquals(['propertyM'], $attribute->getArguments());
-        $attribute = $provider->getAttribute(($reflector(Multiple::class))->getProperty('p1'));
+        $attribute = $provider->getAttributes(($reflector(Multiple::class))->getProperty('p1'))[0];
         $this->assertEquals(PropertyAttribute::class, $attribute->getName());
         $this->assertEquals(['propertyM12'], $attribute->getArguments());
-        $attribute = $provider->getAttribute(($reflector(Multiple::class))->getProperty('p2'));
+        $attribute = $provider->getAttributes(($reflector(Multiple::class))->getProperty('p2'))[0];
         $this->assertEquals(PropertyAttribute::class, $attribute->getName());
         $this->assertEquals(['propertyM12'], $attribute->getArguments());
 
@@ -629,6 +591,6 @@ class ProviderTest extends \ryunosuke\Test\AbstractTestCase
                     ],
                 ],
             ],
-        ], $provider->getAttribute($reflection)->getArguments());
+        ], $provider->getAttributes($reflection)[0]->getArguments());
     }
 }
