@@ -28,11 +28,6 @@ php80 demo/main.php
 The `Provider` class provides a method that returns a ReflectionAttribute.
 This works the same way in php7/8.
 
-- `getAttributes`: compatible php8's Reflection::getAttributes
-- `getAttribute`: single version of getAttributes
-- `getAttributesOf`: get Attribute directly without Reflection instance
-- `getAttributeOf`: single version of getAttributes
-
 ## Notice
 
 - Performance is low
@@ -50,6 +45,12 @@ This works the same way in php7/8.
   - major: change specifications (BC break)
   - minor: add feature (no BC break)
   - patch: fix bug (no BC break)
+
+### 2.0.0
+
+- [feature] delete utility getter
+  - use ryunosuke/utility-attribute (https://github.com/arima-ryunosuke/php-utility-attribute)
+- [feature] deprecated No cache setting
 
 ### 1.2.0
 
